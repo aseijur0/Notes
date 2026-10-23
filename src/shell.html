@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="Offline host notebooks. Paste output, find credentials, and pick up where you left off.">
+  <title>OSCP // MAP — Offline workspace</title>
+  <style>/* APP_CSS */</style>
+</head>
+<body>
+  <header class="topbar">
+    <a href="#" class="brand" id="brand" aria-label="OSCP Map home"><span class="brand-icon">⌘</span>OSCP<span class="slash">//</span>MAP<span class="version">02</span></a>
+    <div class="top-divider"></div><span class="top-caption">YOUR OFFLINE FIELDNOTES</span>
+    <div class="top-actions"><span class="offline"><i></i> OFFLINE</span><button id="open-btn" class="quiet">Open backup</button><button id="backup-btn">↓ Save backup</button><button id="import-btn" class="primary">↑ Import scan</button></div>
+  </header>
+  <div class="app-layout" id="app-layout">
+    <aside class="sidebar" id="workspace-panel" aria-label="Workspace navigation">
+      <div class="workspace-label"><span class="workspace-label-text">WORKSPACE</span><div class="workspace-panel-actions"><button id="settings-btn" class="icon-btn" aria-label="Workspace settings" title="Workspace settings">⚙</button><button id="workspace-toggle" class="icon-btn" aria-label="Hide workspace" title="Hide workspace" aria-expanded="true" aria-controls="workspace-content">‹</button></div></div>
+      <div id="workspace-content" class="workspace-content">
+      <button id="workspace-name" class="workspace-name" title="Edit workspace settings">OSCP workspace</button>
+      <div class="workspace-sub">Paste. Find. Pick up where you left off.</div>
+      <nav class="navigation" aria-label="Workspace views">
+        <button data-view="notebook" class="nav-btn"><span class="nav-icon">≡</span>Notebook</button>
+        <button data-view="map" class="nav-btn active"><span class="nav-icon">⌘</span>Mind map<span class="nav-count" id="count-all">0</span></button>
+        <button data-view="credentials" class="nav-btn"><span class="nav-icon">⚿</span>Credentials<span class="nav-count" id="count-credential">0</span></button>
+        <button data-view="tasks" class="nav-btn"><span class="nav-icon">☑</span>Check next</button>
+      </nav>
+      <details class="workspace-more"><summary>More tools</summary><nav class="navigation" aria-label="Advanced workspace views"><button data-view="hosts" class="nav-btn">Hosts & services<span class="nav-count" id="count-host">0</span></button><button data-view="findings" class="nav-btn">Saved discoveries<span class="nav-count" id="count-finding">0</span></button><button data-view="checklist" class="nav-btn">Progress checklist</button><button data-view="activity" class="nav-btn">Original scans & activity</button><button id="advanced-add" class="nav-btn">Add structured discovery</button><button id="link-btn" class="nav-btn">Add map relationship</button></nav></details>
+      <div class="sidebar-bottom"><button id="report-btn" class="full">↗ Export notes</button><button id="help-btn" class="quiet full">Quick guide <span class="kbd">?</span></button><div class="local-note"><i class="status-dot"></i>Local files. Local knowledge.</div></div>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="page-heading"><div><div class="eyebrow" id="view-eyebrow">OVERVIEW</div><h1 id="view-title">Mind map<span class="title-dot">.</span></h1></div><div class="heading-actions"><button id="map-btn">Map</button><button id="add-btn" class="primary">Open notebook</button></div></div>
+      <div class="metrics" id="metrics"></div>
+      <div class="view-toolbar"><div class="search-wrap"><span>⌕</span><input id="search" type="search" placeholder="Find output, credentials, commands…" aria-label="Search everything" aria-controls="search-panel" aria-expanded="false"><kbd>Ctrl K</kbd></div><select id="scope" aria-label="Limit view to a host"><option value="">All hosts</option></select><button id="clear-filters" class="quiet" hidden>Clear filters</button><span id="result-count" class="result-count"></span></div>
+      <section id="search-panel" class="search-panel" aria-label="Search results" hidden><div class="search-panel-head"><span id="search-summary" role="status"></span><button id="close-search" class="quiet">Close search · Esc</button></div><div id="search-results"></div></section>
+      <section id="notebook-view" class="notebook-view" aria-label="Host notebook" hidden>
+        <div class="notebook-top"><label class="host-switch-label">Writing in <select id="notebook-host" aria-label="Active notebook host"></select></label><button id="host-details" class="quiet">Host details</button></div>
+        <div id="pinned-next" class="pinned-next" hidden></div>
+        <nav class="notebook-tabs" aria-label="Notebook tabs"><button data-tab="notes" aria-pressed="true">Notes</button><button data-tab="credentials" aria-pressed="false">Credentials <span id="notebook-credential-count"></span></button><button data-tab="tasks" aria-pressed="false">Next steps <span id="notebook-task-count"></span></button></nav>
+        <div id="notebook-notes">
+          <div class="note-editor-head"><span id="note-context">Notes</span><div><button id="back-to-notes" class="quiet" hidden>Back to notebook</button><button id="mark-credential" class="quiet" title="Select text in your notes, then keep it as a credential">Keep as credential</button><button id="bookmark-note" class="quiet" title="Select a passage to show on the map">Pin to map</button></div></div>
+          <textarea id="notebook-editor" aria-label="Notebook text" spellcheck="false" placeholder="Paste output or type your notes here. Everything saves as you go.&#10;&#10;Use - [ ] for a next step. Paste screenshots directly."></textarea>
+          <div class="notebook-editor-foot"><span>Plain text / Markdown · screenshots can be pasted or dropped here</span><button id="add-screenshot" class="quiet">Attach screenshot</button></div>
+          <div id="notebook-images" class="notebook-images"></div>
+          <div id="credential-suggestions" class="credential-suggestions"></div>
+          <div id="reference-suggestions" class="credential-suggestions"></div>
+          <details class="notebook-evidence"><summary id="evidence-summary">Scan evidence & earlier notes</summary><div id="notebook-evidence"></div></details>
+        </div>
+        <div id="notebook-credentials" hidden></div>
+        <div id="notebook-tasks" hidden>
+          <div class="note-editor-head"><span>Next steps</span></div>
+          <textarea id="tasks-editor" aria-label="Next steps text" spellcheck="false" placeholder="- [ ] "></textarea>
+          <div class="notebook-editor-foot"><span>One step per line · press Enter to add the next · everything saves as you go</span></div>
+        </div>
+      </section>
+      <section id="map-view" class="map-view" aria-label="Interactive mind map">
+        <div id="map-filters" class="map-filters" aria-label="Visible node types"></div>
+        <svg id="graph" xmlns="http://www.w3.org/2000/svg" aria-label="Discovery graph. Drag nodes to arrange; drag the background to pan. Use plus and minus to zoom." tabindex="0"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#718395"/></marker></defs><g id="graph-world"><g id="graph-edges"></g><g id="graph-nodes"></g></g></svg>
+        <div id="welcome" class="welcome"><div class="welcome-art" aria-hidden="true"><span class="art-node">▣</span><span class="art-line"></span><span class="art-node accent">⌘</span><span class="art-line"></span><span class="art-node amber">⚿</span></div><div class="eyebrow">EVERY DISCOVERY HAS A CONNECTION</div><h2>Turn your scans into<br>a clearer picture.</h2><p>Bring your hosts, credentials, and findings together.<br>Build the path as you work. Keep the evidence close.</p><div class="welcome-actions"><button class="primary" id="welcome-import">↑ Import your first scan</button><button id="demo-btn">Explore example lab ↗</button></div><div class="welcome-formats">NMAP XML · NORMAL TEXT · GREPABLE OUTPUT</div><div class="welcome-foot">Runs entirely in this HTML file. No account. No server.</div></div>
+        <div id="no-results" class="no-results" hidden>No discoveries match these filters.<br><button id="reset-map-filters">Reset filters</button></div>
+        <div class="map-caption"><span class="status-dot"></span><span id="map-caption">Your investigation starts here</span></div>
+        <div class="map-controls"><button id="zoom-out" aria-label="Zoom out">−</button><span id="zoom-level">100%</span><button id="zoom-in" aria-label="Zoom in">+</button><span class="control-divider"></span><button id="fit-btn">Fit</button><button id="layout-btn" title="Reset node positions">Arrange</button></div>
+        <div class="map-legend"><span><i class="line"></i>Recorded relationship</span><span><i class="line dashed"></i>Unverified lead</span></div>
+      </section>
+      <section id="list-view" class="list-view" hidden></section>
+      <footer class="statusbar"><span id="save-status" role="status">Ready · session only</span><span id="folder-status" role="status"></span><button id="undo-btn" disabled>↶ Undo last change</button><span id="last-backup">No backup saved this session</span></footer>
+    </main>
+    <aside id="inspector" class="inspector" aria-label="Discovery inspector" hidden></aside>
+  </div>
+  <dialog id="dialog" aria-labelledby="dialog-title"><form id="editor"><div class="dialog-heading"><div><div class="eyebrow" id="dialog-eyebrow">WORKSPACE</div><h2 id="dialog-title">Add discovery</h2></div><button type="button" id="close-dialog" class="icon-btn" aria-label="Close dialog">×</button></div><div id="dialog-body"></div><p id="form-error" class="form-error" role="alert"></p><div id="dialog-actions" class="dialog-actions"><button type="button" id="cancel-dialog">Cancel</button><button type="submit" class="primary" id="submit-btn">Save discovery</button></div></form></dialog>
+  <input id="scan-input" type="file" accept=".xml,.nmap,.gnmap,.txt" multiple hidden>
+  <input id="backup-input" type="file" accept=".json" hidden>
+  <input id="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <div id="drop-overlay" class="drop-overlay" hidden><div>↓<h2>Drop your Nmap scans</h2><p>XML, normal output, or grepable output</p></div></div>
+  <script>/* CORE_JS */</script>
+  <script>/* NOTEBOOK_JS */</script>
+  <script>/* STORAGE_JS */</script>
+  <script>/* APP_JS */</script>
+</body>
+</html>
